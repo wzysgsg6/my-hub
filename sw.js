@@ -1,4 +1,4 @@
-const CACHE_NAME = 'my-hub-v2';
+const CACHE_NAME = 'my-hub-v3';
 const ASSETS = [
   './',
   './index.html',
@@ -7,6 +7,7 @@ const ASSETS = [
   './icon.svg',
   './icon-192.png',
   './icon-512.png',
+  './icon-maskable-512.png',
   './apple-touch-icon.png'
 ];
 
