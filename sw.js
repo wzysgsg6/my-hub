@@ -1,4 +1,4 @@
-const CACHE_NAME = 'my-hub-v1';
+const CACHE_NAME = 'my-hub-v2';
 const ASSETS = [
   './',
   './index.html',
@@ -13,7 +13,7 @@ const ASSETS = [
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then((cache) => cache.addAll(ASSETS))
+      .then((cache) => Promise.allSettled(ASSETS.map((asset) => cache.add(asset))))
       .then(() => self.skipWaiting())
   );
 });
@@ -26,6 +26,13 @@ self.addEventListener('activate', (event) => {
   );
 });
 
+function fetchWithTimeout(request, options = {}, timeout = 8000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeout);
+  return fetch(request, { ...options, signal: controller.signal })
+    .finally(() => clearTimeout(timer));
+}
+
 self.addEventListener('fetch', (event) => {
   const request = event.request;
   if (request.method !== 'GET') return;
@@ -35,7 +42,7 @@ self.addEventListener('fetch', (event) => {
 
   if (url.pathname.endsWith('/projects.json')) {
     event.respondWith(
-      fetch(request, { cache: 'no-store' })
+      fetchWithTimeout(request, { cache: 'no-store' }, 8000)
         .then((response) => {
           const copy = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put('./projects.json', copy));
@@ -48,7 +55,7 @@ self.addEventListener('fetch', (event) => {
 
   if (request.mode === 'navigate') {
     event.respondWith(
-      fetch(request)
+      fetchWithTimeout(request, {}, 8000)
         .then((response) => {
           const copy = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
@@ -62,7 +69,7 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.match(request).then((cached) => {
       if (cached) return cached;
-      return fetch(request).then((response) => {
+      return fetchWithTimeout(request, {}, 8000).then((response) => {
         if (response.ok) {
           const copy = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
