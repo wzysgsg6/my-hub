@@ -46,6 +46,7 @@ BACK_SCRIPT = """
 OLD_CLASS_KEY_BLOCK = """  if (!state.keyB64) {
     $('#todayView').innerHTML = '<div class="notice"><strong>缺少访问密钥</strong><p>请从完整链接打开本页。</p></div>';
     $('#heroStatus').textContent = '缺少访问密钥';
+    $('#pdfBtn')?.classList.add('hidden');
     return;
   }
 """
@@ -74,6 +75,58 @@ NEW_CLASS_KEY_BLOCK = """  if (!state.keyB64) {
     });
     return;
   }
+"""
+
+NEW_PDF_FUNCTION = """function bytesToBase64(bytes) {
+  let binary = '';
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+  }
+  return btoa(binary);
+}
+
+async function openOriginalPdf() {
+  if (!state.keyB64) {
+    showToast('缺少访问密钥');
+    return;
+  }
+
+  try {
+    const response = await fetch('./schedule.pdf.enc.json');
+    if (!response.ok) throw new Error('PDF 数据读取失败');
+    const payload = await response.json();
+    const bytes = await decryptBytes(payload, state.keyB64);
+
+    const plugins = window.Capacitor && window.Capacitor.Plugins;
+    if (plugins && plugins.Filesystem && plugins.Share) {
+      try {
+        const fileName = '课程表-' + Date.now() + '.pdf';
+        const saved = await plugins.Filesystem.writeFile({
+          path: fileName,
+          data: bytesToBase64(bytes),
+          directory: 'CACHE'
+        });
+        await plugins.Share.share({
+          title: '课程表 PDF',
+          url: saved.uri,
+          dialogTitle: '用 PDF 阅读器打开课程表'
+        });
+        return;
+      } catch (nativeError) {
+        console.warn('Native PDF share failed', nativeError);
+      }
+    }
+
+    const blobUrl = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
+    const win = window.open(blobUrl, '_blank');
+    if (!win) window.location.href = blobUrl;
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 120000);
+  } catch (error) {
+    showToast(error.message || 'PDF 打开失败');
+  }
+}
+
 """
 
 def run(cmd: list[str], cwd: Path | None = None) -> None:
@@ -152,6 +205,10 @@ def main() -> None:
     if OLD_CLASS_KEY_BLOCK not in class_text:
         raise RuntimeError("Could not find the class key prompt block in today-class/app.js")
     class_text = class_text.replace(OLD_CLASS_KEY_BLOCK, NEW_CLASS_KEY_BLOCK, 1)
+
+    pdf_start = class_text.index("async function openOriginalPdf() {")
+    pdf_end = class_text.index("function parseISODateUTC(", pdf_start)
+    class_text = class_text[:pdf_start] + NEW_PDF_FUNCTION + "\n" + class_text[pdf_end:]
     class_app.write_text(class_text, encoding="utf-8")
 
     for index_path in [WEB / "index.html", WEB / "game" / "index.html", WEB / "class" / "index.html"]:
