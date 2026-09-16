@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "updatedAt": "2026-09-16",
+  "projects": [
+    {
+      "id": "gsf-mobile-game",
+      "name": "\u5546\u6cd5\u5c0f\u6e38\u620f",
+      "description": "\u516c\u53f8\u6cd5\u524d\u4e09\u7ae0\u6cd5\u8003\u77e5\u8bc6\u526f\u672c",
+      "icon": "\u2696\ufe0f",
+      "color": "#4f7cff",
+      "url": "https://wzysgsg6.github.io/gsf-mobile-game/",
+      "order": 10
+    },
+    {
+      "id": "today-class",
+      "name": "\u4eca\u65e5\u8bfe\u8868",
+      "description": "\u6309\u5f53\u524d\u5468\u6b21\u548c\u661f\u671f\u663e\u793a\u4eca\u65e5\u8bfe\u7a0b",
+      "icon": "\ud83d\udcc5",
+      "color": "#17b978",
+      "url": "https://wzysgsg6.github.io/today-class/",
+      "order": 20
+    }
+  ]
+}
