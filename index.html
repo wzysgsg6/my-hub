@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0b1020">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Hub">
+  <link rel="manifest" href="./manifest.json">
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png">
+  <title>&#25105;&#30340;&#24037;&#20316;&#21488;</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b1020;
+      --panel: rgba(255,255,255,.07);
+      --panel-strong: rgba(255,255,255,.11);
+      --text: #f5f7ff;
+      --muted: #9aa6c7;
+      --line: rgba(255,255,255,.12);
+    }
+    * { box-sizing: border-box; }
+    html, body { min-height: 100%; }
+    body {
+      margin: 0;
+      min-height: 100dvh;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 8% -8%, rgba(79,124,255,.38), transparent 40%),
+        radial-gradient(circle at 105% 12%, rgba(23,185,120,.22), transparent 34%),
+        var(--bg);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+    .app {
+      width: min(100%, 760px);
+      margin: 0 auto;
+      padding: max(24px, env(safe-area-inset-top)) 18px max(28px, env(safe-area-inset-bottom));
+    }
+    .header { margin: 8px 0 22px; }
+    .eyebrow {
+      color: #8fa2ff;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .16em;
+      margin-bottom: 10px;
+    }
+    .header-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+    h1 { margin: 0; font-size: clamp(28px, 8vw, 42px); line-height: 1.08; letter-spacing: -.04em; }
+    .subtitle { margin: 10px 0 0; color: var(--muted); font-size: 14px; }
+    .install-btn {
+      flex: 0 0 auto;
+      border: 1px solid rgba(143,162,255,.45);
+      background: rgba(79,124,255,.15);
+      color: #dce3ff;
+      border-radius: 999px;
+      padding: 9px 13px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+    .card {
+      --card-color: #4f7cff;
+      position: relative;
+      display: flex;
+      min-height: 172px;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      background: linear-gradient(145deg, color-mix(in srgb, var(--card-color) 28%, transparent), var(--panel));
+      color: inherit;
+      text-decoration: none;
+      box-shadow: 0 18px 50px rgba(0,0,0,.22);
+      transition: transform .16s ease, border-color .16s ease, background .16s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .card::after {
+      content: "";
+      position: absolute;
+      right: -34px;
+      bottom: -34px;
+      width: 92px;
+      height: 92px;
+      border-radius: 50%;
+      background: color-mix(in srgb, var(--card-color) 48%, transparent);
+      filter: blur(2px);
+      opacity: .8;
+    }
+    .card:active { transform: scale(.975); border-color: color-mix(in srgb, var(--card-color) 60%, white); }
+    .card-top, .card-bottom { position: relative; z-index: 1; }
+    .card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+    .card-icon {
+      display: grid;
+      width: 48px;
+      height: 48px;
+      place-items: center;
+      border: 1px solid rgba(255,255,255,.16);
+      border-radius: 15px;
+      background: rgba(7,10,24,.28);
+      font-size: 25px;
+      backdrop-filter: blur(8px);
+    }
+    .arrow { color: rgba(255,255,255,.76); font-size: 22px; line-height: 1; }
+    .card-name { margin: 22px 0 6px; font-size: 18px; line-height: 1.2; letter-spacing: -.02em; }
+    .card-description { margin: 0; color: rgba(245,247,255,.72); font-size: 12px; line-height: 1.45; }
+    .status { min-height: 20px; margin: 22px 2px 0; color: var(--muted); font-size: 12px; }
+    .error { color: #ffb4b4; }
+    @media (max-width: 360px) { .grid { grid-template-columns: 1fr; } }
+    @media (min-width: 620px) { .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <div class="eyebrow">MOBILE WORKSPACE</div>
+      <div class="header-row">
+        <div>
+          <h1>&#25105;&#30340;&#24037;&#20316;&#21488;</h1>
+          <p class="subtitle">&#28857;&#21345;&#29255;&#36827;&#20837;&#65292;&#36820;&#22238;&#38190;&#22238;&#21040;&#36825;&#37324;</p>
+        </div>
+        <button id="installBtn" class="install-btn" hidden>&#23433;&#35013;</button>
+      </div>
+    </header>
+    <main id="grid" class="grid" aria-live="polite"></main>
+    <footer id="status" class="status">&#27491;&#22312;&#35835;&#21462;&#39033;&#30446;&#28165;&#21333;&hellip;</footer>
+  </div>
+  <script>
+    const grid = document.getElementById('grid');
+    const status = document.getElementById('status');
+    const installBtn = document.getElementById('installBtn');
+    let deferredInstallPrompt = null;
+
+    function renderProjects(projects) {
+      grid.replaceChildren();
+      const items = Array.isArray(projects)
+        ? projects.slice()
+        : (Array.isArray(projects.projects) ? projects.projects.slice() : []);
+      items.sort((a, b) => (a.order || 999) - (b.order || 999) || String(a.name).localeCompare(String(b.name), 'zh-CN'));
+      for (const project of items) {
+        const card = document.createElement('a');
+        card.className = 'card';
+        card.href = project.url;
+        card.style.setProperty('--card-color', project.color || '#4f7cff');
+        if (project.openInNewTab) {
+          card.target = '_blank';
+          card.rel = 'noopener noreferrer';
+        }
+        const top = document.createElement('div');
+        top.className = 'card-top';
+        const icon = document.createElement('div');
+        icon.className = 'card-icon';
+        icon.textContent = project.icon || '\u2022';
+        const arrow = document.createElement('div');
+        arrow.className = 'arrow';
+        arrow.textContent = '\u2192';
+        top.append(icon, arrow);
+
+        const bottom = document.createElement('div');
+        bottom.className = 'card-bottom';
+        const name = document.createElement('h2');
+        name.className = 'card-name';
+        name.textContent = project.name || project.id;
+        const description = document.createElement('p');
+        description.className = 'card-description';
+        description.textContent = project.description || '';
+        bottom.append(name, description);
+        card.append(top, bottom);
+        grid.append(card);
+      }
+      const updated = projects && projects.updatedAt ? ` \u00b7 ${projects.updatedAt}` : '';
+      status.textContent = `\u5171 ${items.length} \u4e2a\u9879\u76ee${updated}`;
+      status.classList.remove('error');
+    }
+
+    async function readCachedProjects() {
+      if (!('caches' in window)) return null;
+      const cached = await caches.match('./projects.json');
+      if (!cached) return null;
+      return cached.json();
+    }
+
+    async function loadProjects() {
+      status.textContent = '\u6b63\u5728\u66f4\u65b0\u9879\u76ee\u6e05\u5355\u2026';
+      status.classList.remove('error');
+      try {
+        const url = new URL('./projects.json', location.href);
+        url.searchParams.set('_', Date.now().toString());
+        const response = await fetch(url, { cache: 'no-store' });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+        renderProjects(data);
+      } catch (error) {
+        const cached = await readCachedProjects().catch(() => null);
+        if (cached) {
+          renderProjects(cached);
+          status.textContent = '\u79bb\u7ebf\u6a21\u5f0f\uff1a\u663e\u793a\u4e0a\u6b21\u7f13\u5b58\u7684\u9879\u76ee';
+          return;
+        }
+        status.textContent = '\u9879\u76ee\u6e05\u5355\u52a0\u8f7d\u5931\u8d25\uff0c\u8bf7\u68c0\u67e5\u7f51\u7edc\u540e\u91cd\u8bd5';
+        status.classList.add('error');
+      }
+    }
+
+    window.addEventListener('beforeinstallprompt', (event) => {
+      event.preventDefault();
+      deferredInstallPrompt = event;
+      installBtn.hidden = false;
+    });
+
+    installBtn.addEventListener('click', async () => {
+      if (!deferredInstallPrompt) return;
+      deferredInstallPrompt.prompt();
+      await deferredInstallPrompt.userChoice;
+      deferredInstallPrompt = null;
+      installBtn.hidden = true;
+    });
+
+    window.addEventListener('appinstalled', () => {
+      deferredInstallPrompt = null;
+      installBtn.hidden = true;
+    });
+
+    window.addEventListener('pageshow', (event) => {
+      if (event.persisted) loadProjects();
+    });
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') loadProjects();
+    });
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+      });
+    }
+
+    loadProjects();
+  </script>
+</body>
+</html>
